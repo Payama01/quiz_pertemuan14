@@ -1,14 +1,25 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 
+// Definisikan tipe untuk context-nya
+type RouteContext = {
+  // 'params' adalah Promise, ini adalah perubahan di Next.js baru
+  params: Promise<{
+    id: string;
+  }>
+};
+
 export async function GET(
   request: Request,
-  { params }: { params: { id: string } }
+  // Terima context, yang berisi params
+  context: RouteContext
 ) {
-  const id = params.id;
+  // 'await' properti params, BUKAN seluruh context
+  const { id } = await context.params; 
+
   try {
     const item = await prisma.wishlistItem.findUnique({
-      where: { id: id },
+      where: { id: id }, // 'id' sekarang akan berisi string
     });
 
     if (!item) {
@@ -24,15 +35,17 @@ export async function GET(
 
 export async function PATCH(
   request: Request,
-  { params }: { params: { id: string } }
+  context: RouteContext // Gunakan tipe yang sama
 ) {
-  const id = params.id;
+  // 'await' properti params
+  const { id } = await context.params;
+
   try {
     const body = await request.json();
     const { nama, harga } = body;
 
     const updatedItem = await prisma.wishlistItem.update({
-      where: { id: id },
+      where: { id: id }, // 'id' sekarang sudah benar
       data: {
         nama: nama,
         harga: Number(harga),
@@ -48,12 +61,14 @@ export async function PATCH(
 
 export async function DELETE(
   request: Request,
-  { params }: { params: { id: string } }
+  context: RouteContext // Gunakan tipe yang sama
 ) {
-  const id = params.id;
+  // 'await' properti params
+  const { id } = await context.params;
+
   try {
     await prisma.wishlistItem.delete({
-      where: { id: id },
+      where: { id: id }, // 'id' sekarang sudah benar
     });
     return NextResponse.json({ message: 'Item dihapus' }, { status: 200 });
   } catch (error) {
