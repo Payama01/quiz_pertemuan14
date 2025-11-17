@@ -85,7 +85,12 @@ export default function HalamanUtama() {
       <div className="row">
         <div className="col-md-10 offset-md-1 col-lg-8 offset-lg-2">
 
-          <h1 className="display-4 text-center mb-5 text-dark">Wishlist Payama</h1>
+          <h1 className="display-4 text-center mb-4 text-dark">Wishlist Payama</h1>
+          <div className="d-grid gap-2 mb-4">
+            <Link href="/explore" className="btn btn-info shadow-sm">
+              Explore Produk Lain (dari API Eksternal)
+            </Link>
+          </div>
 
           <div className="card shadow-sm mb-4">
             <div className="card-header">
