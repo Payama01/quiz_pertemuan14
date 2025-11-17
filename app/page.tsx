@@ -142,14 +142,11 @@ export default function HalamanUtama() {
                 {items.map(item => (
                   <li key={item.id} className="list-group-item d-flex justify-content-between align-items-center">
                     
-                    {/* Hapus Link di sini agar tidak tertukar */}
                     <span className="text-dark">
                       {item.nama} - (Rp {item.harga.toLocaleString('id-ID')})
                     </span>
                     
-                    {/* Tambahkan grup untuk tombol */}
                     <div className="d-flex gap-2">
-                      {/* INI TOMBOL EDIT BARU (Soal 4c) */}
                       <Link href={`/wishlist/${item.id}/edit`} className="btn btn-outline-secondary btn-sm">
                         Edit
                       </Link>
