@@ -1,8 +1,7 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import Link from 'next/link';
+import Link from 'next/link'; 
 
 interface WishlistItem {
   id: string;
@@ -10,50 +9,75 @@ interface WishlistItem {
   harga: number;
 }
 
-const STORAGE_KEY = 'myWishlist';
-
 export default function HalamanUtama() {
   const [items, setItems] = useState<WishlistItem[]>([]);
   const [namaBaru, setNamaBaru] = useState('');
   const [hargaBaru, setHargaBaru] = useState(0);
+  const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    const dataTersimpan = localStorage.getItem(STORAGE_KEY);
-    if (dataTersimpan) {
-      setItems(JSON.parse(dataTersimpan));
+  const loadItems = async () => {
+    try {
+      const res = await fetch('/api/wishlist');
+      if (!res.ok) throw new Error('Gagal mengambil data');
+      const data: WishlistItem[] = await res.json();
+      setItems(data);
+    } catch (error) {
+      console.error(error);
+      alert('Gagal memuat data dari server.');
+    } finally {
+      setLoading(false);
     }
-  }, []);
-
-  useEffect(() => {
-    if (items.length > 0) {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
-    } else {
-      const dataTersimpan = localStorage.getItem(STORAGE_KEY);
-      if (dataTersimpan) {
-        localStorage.removeItem(STORAGE_KEY);
-      }
-    }
-  }, [items]);
-
-  const handleAddItem = () => {
-    if (!namaBaru) return;
-
-    const newItem: WishlistItem = {
-      id: crypto.randomUUID(),
-      nama: namaBaru,
-      harga: hargaBaru,
-    };
-
-    const listBaru = [...items, newItem];
-    setItems(listBaru);
-    
-    setNamaBaru('');
-    setHargaBaru(0);
   };
 
-  const handleDeleteItem = (id: string) => {
-    const listBaru = items.filter(item => item.id !== id);
-    setItems(listBaru);
+  useEffect(() => {
+    loadItems();
+  }, []); 
+
+  const handleAddItem = async () => {
+    if (!namaBaru) return;
+
+    try {
+      const res = await fetch('/api/wishlist', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          nama: namaBaru,
+          harga: hargaBaru,
+        }),
+      });
+
+      if (!res.ok) throw new Error('Gagal menambah item');
+
+      const newItem: WishlistItem = await res.json();
+
+      setItems([newItem, ...items]); 
+      
+      setNamaBaru('');
+      setHargaBaru(0);
+    } catch (error) {
+      console.error(error);
+      alert('Gagal menambah item ke database.');
+    }
+  };
+
+  const handleDeleteItem = async (id: string) => {
+    if (!confirm('Yakin mau hapus item ini?')) return;
+
+    try {
+      const res = await fetch(`/api/wishlist/${id}`, {
+        method: 'DELETE',
+      });
+
+      if (!res.ok) throw new Error('Gagal menghapus item');
+
+      setItems(items.filter(item => item.id !== id));
+
+    } catch (error) {
+      console.error(error);
+      alert('Gagal menghapus item dari database.');
+    }
   };
 
   return (
@@ -103,7 +127,13 @@ export default function HalamanUtama() {
               </p>
               
               <ul className="list-group">
-                {items.length === 0 && (
+                {loading && (
+                  <li className="list-group-item text-center text-muted">
+                    Memuat data...
+                  </li>
+                )}
+
+                {!loading && items.length === 0 && (
                   <li className="list-group-item text-center text-muted">
                     List masih kosong nih...
                   </li>
@@ -112,15 +142,24 @@ export default function HalamanUtama() {
                 {items.map(item => (
                   <li key={item.id} className="list-group-item d-flex justify-content-between align-items-center">
                     
-                    <Link href={`/wishlist/${item.id}`} className="text-dark" style={{ textDecoration: 'none' }}>
+                    {/* Hapus Link di sini agar tidak tertukar */}
+                    <span className="text-dark">
                       {item.nama} - (Rp {item.harga.toLocaleString('id-ID')})
-                    </Link>
+                    </span>
                     
-                    <button 
-                      className="btn btn-outline-danger btn-sm" 
-                      onClick={() => handleDeleteItem(item.id)}>
-                      Delete
-                    </button>
+                    {/* Tambahkan grup untuk tombol */}
+                    <div className="d-flex gap-2">
+                      {/* INI TOMBOL EDIT BARU (Soal 4c) */}
+                      <Link href={`/wishlist/${item.id}/edit`} className="btn btn-outline-secondary btn-sm">
+                        Edit
+                      </Link>
+
+                      <button 
+                        className="btn btn-outline-danger btn-sm" 
+                        onClick={() => handleDeleteItem(item.id)}>
+                        Delete
+                      </button>
+                    </div>
                   </li>
                 ))}
               </ul>
