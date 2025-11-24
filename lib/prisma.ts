@@ -1,11 +1,29 @@
 import { PrismaClient } from '@prisma/client';
+import path from 'path';
 
 declare global {
-  var prisma: PrismaClient | undefined;
+  // eslint-disable-next-line no-var
+  var cachedPrisma: PrismaClient;
 }
 
-const prisma = global.prisma || new PrismaClient();
+// Workaround to find the db file in production
+const filePath = path.join(process.cwd(), 'prisma/dev.db');
+const config = {
+  datasources: {
+    db: {
+      url: 'file:' + filePath,
+    },
+  },
+};
 
-if (process.env.NODE_ENV === 'development') global.prisma = prisma;
+let prisma: PrismaClient;
+if (process.env.NODE_ENV === 'production') {
+  prisma = new PrismaClient(config);
+} else {
+  if (!global.cachedPrisma) {
+    global.cachedPrisma = new PrismaClient(config);
+  }
+  prisma = global.cachedPrisma;
+}
 
 export default prisma;
